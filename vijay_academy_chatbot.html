@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vijay Academy — AI Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #1D9E75;
+    --green-dark: #085041;
+    --green-mid: #0F6E56;
+    --green-light: #E1F5EE;
+    --green-pale: #F0FAF6;
+    --purple: #534AB7;
+    --purple-light: #EEEDFE;
+    --amber: #BA7517;
+    --amber-light: #FAEEDA;
+    --red: #A32D2D;
+    --red-light: #FCEBEB;
+    --gray-50: #F8F8F6;
+    --gray-100: #F1EFE8;
+    --gray-200: #D3D1C7;
+    --gray-400: #888780;
+    --gray-600: #5F5E5A;
+    --gray-900: #1A1A18;
+    --text: #1A1A18;
+    --text-muted: #5F5E5A;
+    --text-hint: #888780;
+    --border: rgba(0,0,0,0.1);
+    --border-mid: rgba(0,0,0,0.15);
+    --bg: #FAFAF8;
+    --surface: #FFFFFF;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    color: var(--text);
+  }
+
+  /* Background pattern */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 800px 600px at 20% 20%, rgba(29,158,117,0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 600px 400px at 80% 80%, rgba(83,74,183,0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 460px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* Stats bar */
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+
+  .stat {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+
+  .stat-val {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 3px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    color: var(--text-hint);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .toggle-group {
+    display: flex;
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 30px;
+    padding: 3px;
+    box-shadow: var(--shadow);
+  }
+
+  .toggle-btn {
+    padding: 5px 14px;
+    border-radius: 24px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .toggle-btn.active {
+    background: var(--green);
+    color: #fff;
+  }
+
+  .toggle-btn.active.purple {
+    background: var(--purple);
+  }
+
+  /* Chat window */
+  .chat-window {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    border: 0.5px solid var(--border);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Header */
+  .header {
+    background: var(--green);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .header::after {
+    content: '';
+    position: absolute;
+    right: -20px;
+    top: -20px;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    pointer-events: none;
+  }
+
+  .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--green-mid);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9FE1CB;
+    font-size: 15px;
+    font-weight: 600;
+    flex-shrink: 0;
+    border: 1.5px solid rgba(255,255,255,0.2);
+  }
+
+  .header-info { flex: 1; min-width: 0; }
+
+  .header-name {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .header-status {
+    color: #9FE1CB;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #9FE1CB;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.85); }
+  }
+
+  .countdown-block { text-align: right; flex-shrink: 0; }
+  .countdown-val { color: #fff; font-size: 15px; font-weight: 600; font-family: 'DM Mono', monospace; line-height: 1; }
+  .countdown-label { color: #9FE1CB; font-size: 10px; margin-top: 2px; }
+
+  /* Messages */
+  .messages {
+    padding: 14px;
+    min-height: 340px;
+    max-height: 420px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    scroll-behavior: smooth;
+  }
+
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-track { background: transparent; }
+  .messages::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 2px; }
+
+  .msg {
+    max-width: 86%;
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    animation: msgIn 0.2s ease-out;
+  }
+
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .bot-msg {
+    background: var(--gray-50);
+    color: var(--text);
+    border-radius: 4px 16px 16px 16px;
+    align-self: flex-start;
+    border: 0.5px solid var(--border);
+  }
+
+  .user-msg {
+    background: var(--green);
+    color: #fff;
+    border-radius: 16px 4px 16px 16px;
+    align-self: flex-end;
+  }
+
+  .chips-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-self: flex-start;
+    max-width: 100%;
+    animation: msgIn 0.2s ease-out;
+  }
+
+  .chip {
+    background: var(--surface);
+    border: 0.5px solid var(--green);
+    color: var(--green-mid);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .chip:hover { background: var(--green-light); transform: translateY(-1px); }
+  .chip:active { transform: translateY(0); }
+  .chip:disabled { opacity: 0.4; cursor: default; transform: none; }
+
+  /* Hot lead alert */
+  .hot-alert {
+    background: var(--amber-light);
+    border: 1px solid #EF9F27;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #412402;
+    line-height: 1.55;
+    align-self: stretch;
+    animation: msgIn 0.2s ease-out;
+  }
+
+  .hot-alert-title {
+    font-weight: 600;
+    font-size: 12px;
+    color: #412402;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .hot-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--amber);
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  /* Typing indicator */
+  .typing-wrap { align-self: flex-start; animation: msgIn 0.15s ease-out; }
+
+  .typing {
+    display: flex;
+    gap: 4px;
+    padding: 10px 14px;
+    background: var(--gray-50);
+    border-radius: 4px 16px 16px 16px;
+    border: 0.5px solid var(--border);
+    align-items: center;
+  }
+
+  .t-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--gray-400);
+    animation: blink 1.2s infinite;
+  }
+
+  .t-dot:nth-child(2) { animation-delay: 0.2s; }
+  .t-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes blink {
+    0%, 80%, 100% { opacity: 0.3; transform: scale(0.9); }
+    40% { opacity: 1; transform: scale(1); }
+  }
+
+  /* Voice indicator */
+  .voice-bar {
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: var(--red);
+    font-weight: 500;
+    background: var(--surface);
+    border-left: 0.5px solid var(--border);
+    border-right: 0.5px solid var(--border);
+  }
+
+  /* Footer */
+  .footer {
+    background: var(--gray-50);
+    border-top: 0.5px solid var(--border);
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .text-input {
+    flex: 1;
+    padding: 9px 14px;
+    border-radius: 24px;
+    border: 0.5px solid var(--border-mid);
+    background: var(--surface);
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    font-family: 'DM Sans', sans-serif;
+    transition: border-color 0.15s;
+  }
+
+  .text-input:focus { border-color: var(--green); }
+  .text-input::placeholder { color: var(--text-hint); }
+
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 0.5px solid var(--border-mid);
+    background: var(--surface);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .icon-btn:hover { background: var(--gray-100); color: var(--text); }
+  .icon-btn.recording { background: var(--red-light); border-color: var(--red); color: var(--red); }
+  .icon-btn.muted { background: var(--red-light); border-color: var(--red); color: var(--red); }
+
+  .send-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: var(--green);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .send-btn:hover { background: var(--green-mid); transform: scale(1.05); }
+  .send-btn:active { transform: scale(0.97); }
+
+  /* Restart */
+  .restart-btn {
+    width: 100%;
+    padding: 9px;
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    box-shadow: var(--shadow);
+  }
+
+  .restart-btn:hover { background: var(--gray-100); color: var(--text); }
+
+  /* Mode badge */
+  .mode-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-left: 6px;
+    background: rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.9);
+    vertical-align: middle;
+  }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    body { padding: 8px; align-items: flex-start; padding-top: 12px; }
+    .messages { max-height: 360px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-val" id="s-inquiries">0</div>
+      <div class="stat-label">Inquiries</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" id="s-hot">0</div>
+      <div class="stat-label">Hot leads</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" id="s-conv">0%</div>
+      <div class="stat-label">Conversion</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="toggle-group">
+      <button class="toggle-btn active" id="btn-en" onclick="setLang('en')">English</button>
+      <button class="toggle-btn" id="btn-ta" onclick="setLang('ta')">தமிழ்</button>
+    </div>
+    <div class="toggle-group">
+      <button class="toggle-btn active" id="btn-student" onclick="setMode('student')">Student</button>
+      <button class="toggle-btn purple" id="btn-parent" onclick="setMode('parent')" style="color:var(--text-muted)">Parent</button>
+    </div>
+  </div>
+
+  <!-- Chat -->
+  <div class="chat-window">
+
+    <div class="header">
+      <div class="avatar">V</div>
+      <div class="header-info">
+        <div class="header-name">Vijay Academy AI <span class="mode-badge" id="mode-badge">Student</span></div>
+        <div class="header-status">
+          <span class="live-dot"></span>
+          <span id="status-txt">Online · replies instantly</span>
+        </div>
+      </div>
+      <div class="countdown-block">
+        <div class="countdown-val" id="cd-val">--</div>
+        <div class="countdown-label" id="cd-label">NEET 2025</div>
+      </div>
+    </div>
+
+    <div class="messages" id="chat"></div>
+    <div class="voice-bar" id="voice-bar"></div>
+
+    <div class="footer">
+      <input class="text-input" id="inp" placeholder="Type your question..." onkeydown="if(event.key==='Enter')sendText()">
+      <button class="icon-btn" id="mic-btn" title="Voice input" onclick="toggleVoice()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="2" width="6" height="12" rx="3"/>
+          <path d="M5 10a7 7 0 0 0 14 0"/>
+          <line x1="12" y1="19" x2="12" y2="22"/>
+          <line x1="8" y1="22" x2="16" y2="22"/>
+        </svg>
+      </button>
+      <button class="icon-btn" id="spk-btn" title="Toggle voice output" onclick="toggleSpeak()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+        </svg>
+      </button>
+      <button class="send-btn" onclick="sendText()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+
+  </div>
+
+  <button class="restart-btn" onclick="restart()">↺ &nbsp;Reset demo / Start over</button>
+
+</div>
+
+<script>
+var lang = 'en', mode = 'student', speakOn = true, recOn = false;
+var recognition = null, synth = window.speechSynthesis;
+var intentScore = 0, totalInquiries = 0, hotLeads = 0, conversions = 0, hotFired = false;
+var chatEl = document.getElementById('chat');
+
+// Countdown
+function updateCD() {
+  var neet = new Date('2025-05-04');
+  var diff = Math.ceil((neet - new Date()) / 86400000);
+  document.getElementById('cd-val').textContent = diff > 0 ? diff + 'd' : 'Done';
+  document.getElementById('cd-label').textContent = diff > 0 ? 'to NEET 2025' : 'NEET 2025';
+}
+updateCD();
+
+// ─── FLOWS ───────────────────────────────────────────────────────────────────
+var F = {
+en: {
+student: {
+  start: { msg: "Hi! I'm Vijay Academy's AI assistant — available 24/7.\n\nI can help with courses, fees, bookings, exam dates, and more.\n\nWhat would you like to know?", chips: ["Course details","Fee & EMI","Book demo class","Exam countdown","Why Vijay Academy?","Study tips"] },
+  "Course details": { msg: "We offer coaching for:\n\n• NEET — Medical entrance\n• IIT-JEE — Engineering\n• UPSC — Civil services\n• TNPSC — Group exams\n\nWhich course interests you?", chips: ["NEET","IIT-JEE","UPSC","TNPSC"], intent: 1 },
+  "NEET": { msg: "NEET Coaching:\n\n• 1-year & 2-year programs\n• Max 30 students per batch\n• Daily tests + doubt clearing\n• Study material included\n• 2024 batch: 89% success rate\n• Morning & evening batches\n\nReady to book a free demo?", chips: ["Book demo class","Fee & EMI","Why Vijay Academy?"], intent: 2 },
+  "IIT-JEE": { msg: "IIT-JEE Coaching:\n\n• JEE Main + Advanced\n• 1 or 2-year program\n• Weekend batches available\n• IITian faculty\n• Online + offline options\n\nWant to see the fee structure?", chips: ["Fee & EMI","Book demo class","Other courses"], intent: 2 },
+  "UPSC": { msg: "UPSC Coaching:\n\n• Prelims + Mains covered\n• GS + Optional subjects\n• Daily answer writing practice\n• 20 students max per batch\n• Current affairs every morning\n\nShall I book a free demo?", chips: ["Book demo class","Fee & EMI","Other courses"], intent: 2 },
+  "TNPSC": { msg: "TNPSC Group Exam Coaching:\n\n• Group 1, 2, 2A, 4 covered\n• Tamil & English medium\n• Weekly mock tests\n• Very affordable fees\n\nWant fee details or a demo?", chips: ["Fee & EMI","Book demo class","Other courses"], intent: 1 },
+  "Fee & EMI": { msg: "Fee Structure:\n\n• NEET: ₹45,000/year\n• IIT-JEE: ₹50,000/year\n• UPSC: ₹35,000/year\n• TNPSC: ₹12,000 (full)\n\nEMI Options:\n• 3-month EMI — no interest\n• 6-month EMI — no interest\n\nScholarships available for merit students.", chips: ["Check scholarship","Book demo class","Speak to counsellor"], intent: 2 },
+  "Check scholarship": { msg: "Scholarship Eligibility:\n\n• 90%+ in 10th: 20% fee waiver\n• Sibling discount: 10% off\n• Financial need: up to 30% off\n• Early bird (before March): 15% off\n\nCombine up to 2 discounts.\n\nJoin a demo class first — counsellor assesses eligibility.", chips: ["Book demo class","Speak to counsellor"], intent: 2 },
+  "Book demo class": { msg: "Free Demo Classes:\n\n• Every Monday & Thursday\n• Timings: 10 AM or 4 PM\n• Online (Google Meet) or in-person\n• No obligation. Completely free.\n\nShare your name + preferred date and I'll confirm your seat within 30 minutes.\n\nOr call directly: 98765 43210", chips: ["Call now","Speak to counsellor","Study tips"], intent: 3 },
+  "Why Vijay Academy?": { msg: "Why students choose us:\n\n• Smaller batches = more personal attention\n• Tamil-speaking faculty\n• 89% NEET success rate (2024)\n• No hidden fees ever\n• Free doubt sessions daily\n• Parents get weekly progress updates\n\nOther academies charge ₹80,000+ with 60+ students per class.\n\nWant to see for yourself?", chips: ["Book demo class","Fee & EMI"], intent: 2 },
+  "Study tips": { msg: "This week's focus:\n\n• NEET: Organic chemistry reactions — high weightage\n• JEE: Integration by parts — daily practice\n• UPSC: The Hindu editorial — 30 min daily\n• TNPSC: Tamil Nadu history chapter 5\n\nWant tips personalised for your course?", chips: ["NEET","IIT-JEE","UPSC","TNPSC"] },
+  "Exam countdown": { msg: "Exam Dates 2025:\n\n• NEET: May 4, 2025\n• JEE Main Session 1: Jan 22–31\n• JEE Main Session 2: Apr 2–9\n• UPSC Prelims: May 25, 2025\n• TNPSC Group 4: TBA\n\nEvery day counts. The earlier you start, the better prepared you'll be.", chips: ["Book demo class","Course details","Study tips"] },
+  "Other courses": { msg: "Our courses:\nNEET · IIT-JEE · UPSC · TNPSC\n\nWhich would you like to explore?", chips: ["NEET","IIT-JEE","UPSC","TNPSC"] },
+  "Speak to counsellor": { msg: "Our counsellors are available:\nMon–Sat: 9 AM – 7 PM\n\nPhone/WhatsApp: 98765 43210\nEmail: info@vijayacademy.in\nCentre: Anna Nagar, Chennai\n\nWant us to call you back within 2 hours?", chips: ["Yes, call me back","Book demo class"], intent: 2 },
+  "Yes, call me back": { msg: "Share your name and number here and a counsellor will call you within 2 working hours.\n\nThank you for choosing Vijay Academy!", chips: ["Start over"], intent: 1, conversion: true },
+  "Call now": { msg: "Phone/WhatsApp: 98765 43210\nEmail: info@vijayacademy.in\nHours: Mon–Sat, 9 AM – 7 PM", chips: ["Start over","Course details"] },
+  "Start over": null
+},
+parent: {
+  start: { msg: "Hello! Welcome to Vijay Academy.\n\nI'm here to help parents with admissions, fees, progress updates, and more.\n\nHow can I help you today?", chips: ["Admission process","Fee & payment","Child's progress","Batch timings","Parent counselling","Safety & environment"] },
+  "Admission process": { msg: "Admission Process:\n\n1. Attend a free demo class\n2. Meet our academic counsellor\n3. Choose course & batch\n4. Complete enrollment form\n5. Pay first instalment\n\nYour child can start within 48 hours of enrollment.", chips: ["Book demo for child","Fee & payment","Parent counselling"], intent: 2 },
+  "Fee & payment": { msg: "Fee Structure:\n\n• NEET: ₹45,000/year\n• IIT-JEE: ₹50,000/year\n• UPSC: ₹35,000/year\n• TNPSC: ₹12,000\n\nEMI: 3 or 6 months — zero interest.\nSecond child: 10% discount.\nMerit scholarships available.", chips: ["Scholarship details","Book demo for child","Speak to our team"], intent: 2 },
+  "Scholarship details": { msg: "Scholarship Program:\n\n• 90%+ marks: 20% fee waiver\n• Financial need: up to 30% off\n• Sibling enrolled: 10% off\n• Early registration: 15% off\n\nCounsellor assesses eligibility at demo class — no paperwork needed.", chips: ["Book demo for child","Speak to our team"], intent: 2 },
+  "Child's progress": { msg: "Parent Updates at Vijay Academy:\n\n• Weekly SMS progress report\n• Monthly parent-teacher meeting\n• Test scores after every exam\n• Attendance SMS to your number\n• Direct WhatsApp access to subject teachers\n\nNo child falls behind without us telling you first.", chips: ["Book demo for child","Speak to our team"] },
+  "Batch timings": { msg: "Available Batches:\n\n• Morning: 7 AM – 10 AM\n• Afternoon: 12 PM – 3 PM\n• Evening: 5 PM – 8 PM\n• Weekend: Sat & Sun, 9 AM – 1 PM\n\nAll timings available online via Google Meet as well.", chips: ["Book demo for child","Fee & payment"] },
+  "Parent counselling": { msg: "Free Parent Counselling Session:\n\n• Right course selection for your child\n• Realistic target setting\n• How we support struggling students\n• Fee & scholarship planning\n• Your questions — no time limit\n\n45 minutes. Free. No sales pressure.", chips: ["Book counselling","Speak to our team"], intent: 2 },
+  "Book counselling": { msg: "Counselling sessions available:\nMon–Sat, 10 AM – 6 PM\n\nCall/WhatsApp: 98765 43210\n\nOr share your name and number — we'll call to schedule.", chips: ["Speak to our team","Start over"], intent: 1, conversion: true },
+  "Safety & environment": { msg: "Your Child's Safety:\n\n• CCTV in all classrooms\n• Biometric attendance — SMS to parents\n• Female counsellor available\n• Strict anti-ragging policy\n• Separate parent waiting area\n• Regular feedback surveys", chips: ["Book demo for child","Parent counselling"] },
+  "Book demo for child": { msg: "Free Demo Classes:\n\n• Every Monday & Thursday\n• 10 AM or 4 PM\n• In-person or online\n\nShare your child's name, class, and target exam — we'll place them in the right batch and confirm in 30 min.\n\nCall/WhatsApp: 98765 43210", chips: ["Speak to our team","Fee & payment"], intent: 3 },
+  "Speak to our team": { msg: "Our team is available:\nMon–Sat: 9 AM – 7 PM\n\nPhone/WhatsApp: 98765 43210\nEmail: info@vijayacademy.in\n\nShall we call you back within 2 hours?", chips: ["Yes, call us back","Start over"], intent: 1 },
+  "Yes, call us back": { msg: "We'll call within 2 working hours.\n\nPlease share your name and number here.\n\nThank you for trusting Vijay Academy with your child's future.", chips: ["Start over"], intent: 1, conversion: true },
+  "Start over": null
+}
+},
+ta: {
+student: {
+  start: { msg: "வணக்கம்! விஜய் அகாடமி AI assistant — 24/7 உதவிக்கு தயார்.\n\nகோர்ஸ், கட்டணம், டெமோ கிளாஸ், தேர்வு தேதி — எதுவும் கேளுங்க.", chips: ["கோர்ஸ் விவரம்","கட்டணம் & EMI","டெமோ கிளாஸ்","தேர்வு தேதிகள்","ஏன் விஜய் அகாடமி?","படிப்பு tips"] },
+  "கோர்ஸ் விவரம்": { msg: "எங்கள் கோர்ஸ்கள்:\n\n• NEET — மருத்துவம்\n• IIT-JEE — பொறியியல்\n• UPSC — சிவில் சர்வீஸ்\n• TNPSC — குரூப் தேர்வுகள்\n\nஎது பத்தி தெரிஞ்சுக்கணும்?", chips: ["NEET","IIT-JEE","UPSC","TNPSC"], intent: 1 },
+  "NEET": { msg: "NEET கோச்சிங்:\n\n• 1 & 2 வருட program\n• Max 30 மாணவர்கள் per batch\n• Daily tests + doubt sessions\n• Study material இலவசம்\n• 2024 வெற்றி விகிதம்: 89%\n\nFree demo class வேணுமா?", chips: ["டெமோ கிளாஸ்","கட்டணம் & EMI","ஏன் விஜய் அகாடமி?"], intent: 2 },
+  "IIT-JEE": { msg: "IIT-JEE கோச்சிங்:\n\n• JEE Main + Advanced\n• 1 அல்லது 2 வருட program\n• Weekend batch கிடைக்கும்\n• IITian faculty\n• Online + Offline\n\nFee விவரம் வேணுமா?", chips: ["கட்டணம் & EMI","டெமோ கிளாஸ்","வேற கோர்ஸ்"], intent: 2 },
+  "UPSC": { msg: "UPSC கோச்சிங்:\n\n• Prelims + Mains\n• GS + Optional\n• Daily answer writing\n• 20 மாணவர்கள் மட்டும்\n• Daily current affairs\n\nFree demo class வேணுமா?", chips: ["டெமோ கிளாஸ்","கட்டணம் & EMI","வேற கோர்ஸ்"], intent: 2 },
+  "TNPSC": { msg: "TNPSC கோச்சிங்:\n\n• Group 1, 2, 2A, 4\n• தமிழ் & ஆங்கில medium\n• Weekly mock tests\n• மிகவும் affordable\n\nFee விவரம் வேணுமா?", chips: ["கட்டணம் & EMI","டெமோ கிளாஸ்","வேற கோர்ஸ்"], intent: 1 },
+  "கட்டணம் & EMI": { msg: "கட்டண விவரம்:\n\n• NEET: ₹45,000/வருடம்\n• IIT-JEE: ₹50,000/வருடம்\n• UPSC: ₹35,000/வருடம்\n• TNPSC: ₹12,000\n\nEMI வசதி:\n• 3 மாதம் — வட்டி இல்லை\n• 6 மாதம் — வட்டி இல்லை\n\nScholarship available.", chips: ["Scholarship பாரு","டெமோ கிளாஸ்","கவுன்சலர்"], intent: 2 },
+  "Scholarship பாரு": { msg: "Scholarship விவரம்:\n\n• 10th-ல் 90%+: 20% தள்ளுபடி\n• Sibling discount: 10% off\n• Financial need: 30% வரை\n• Early registration: 15% off\n\nDemo class-ல் counsellor assess பண்றார்.", chips: ["டெமோ கிளாஸ்","கவுன்சலர்"], intent: 2 },
+  "டெமோ கிளாஸ்": { msg: "Free Demo Class:\n\n• ஒவ்வொரு திங்கள் & வியாழன்\n• காலை 10 மணி / மாலை 4 மணி\n• Online அல்லது நேரில்\n• முற்றிலும் இலவசம்\n\nபெயர் + விரும்பிய தேதி சொல்லுங்க.\n\nCall: 98765 43210", chips: ["Call பண்ணு","கவுன்சலர்","படிப்பு tips"], intent: 3 },
+  "ஏன் விஜய் அகாடமி?": { msg: "ஏன் நம்மை தேர்ந்தெடுக்கணும்:\n\n• சிறிய batch = அதிக கவனம்\n• தமிழ் பேசும் ஆசிரியர்கள்\n• 89% NEET வெற்றி விகிதம்\n• Hidden fees இல்லவே இல்ல\n• Daily free doubt sessions\n• Weekly parent progress update\n\nமற்றவர்கள் ₹80,000+ வாங்கி 60+ மாணவர்கள் வைக்கிறார்கள்.", chips: ["டெமோ கிளாஸ்","கட்டணம் & EMI"], intent: 2 },
+  "படிப்பு tips": { msg: "இந்த வார focus:\n\n• NEET: Organic chemistry — high weightage\n• JEE: Integration by parts — daily\n• UPSC: Hindu editorial — 30 min\n• TNPSC: TN history chapter 5\n\nUr course-க்கு personalized tips வேணுமா?", chips: ["NEET","IIT-JEE","UPSC","TNPSC"] },
+  "தேர்வு தேதிகள்": { msg: "2025 தேர்வு தேதிகள்:\n\n• NEET: மே 4, 2025\n• JEE Main 1: ஜன 22–31\n• JEE Main 2: ஏப் 2–9\n• UPSC Prelims: மே 25, 2025\n• TNPSC Group 4: விரைவில்\n\nஒவ்வொரு நாளும் முக்கியம். இன்றே join பண்ணுங்க.", chips: ["டெமோ கிளாஸ்","கோர்ஸ் விவரம்","படிப்பு tips"] },
+  "வேற கோர்ஸ்": { msg: "NEET · IIT-JEE · UPSC · TNPSC\n\nஎது பத்தி தெரிஞ்சுக்கணும்?", chips: ["NEET","IIT-JEE","UPSC","TNPSC"] },
+  "கவுன்சலர்": { msg: "Counsellors கிடைக்கும் நேரம்:\nதிங்கள்–சனி: காலை 9 – மாலை 7\n\nPhone/WhatsApp: 98765 43210\n\n2 மணி நேரத்தில் callback வேணுமா?", chips: ["ஆமா, callback","டெமோ கிளாஸ்"], intent: 2 },
+  "ஆமா, callback": { msg: "பெயர் மற்றும் number சொல்லுங்க.\n\n2 மணி நேரத்தில் call வருகிறது.\n\nவிஜய் அகாடமியை தேர்ந்தெடுத்தமைக்கு நன்றி!", chips: ["Start over"], intent: 1, conversion: true },
+  "Call பண்ணு": { msg: "Phone/WhatsApp: 98765 43210\nEmail: info@vijayacademy.in\nதிங்கள்–சனி: காலை 9 – மாலை 7", chips: ["Start over","கோர்ஸ் விவரம்"] },
+  "Start over": null
+},
+parent: {
+  start: { msg: "வணக்கம்! விஜய் அகாடமிக்கு வரவேற்கிறோம்.\n\nஉங்கள் பிள்ளையின் படிப்பு, கட்டணம், progress — எதுவும் கேளுங்க.", chips: ["Admission process","கட்டணம் & payment","பிள்ளையின் progress","Batch நேரங்கள்","Parent counselling","Safety"] },
+  "Admission process": { msg: "Admission Steps:\n\n1. Free demo class attend\n2. Counsellor-கிட்ட பேசு\n3. Course & batch தேர்ந்தெடு\n4. Form fill பண்ணு\n5. First instalment செலுத்து\n\n48 மணி நேரத்தில் class start.", chips: ["Demo book பண்ணு","கட்டணம் & payment","Parent counselling"], intent: 2 },
+  "கட்டணம் & payment": { msg: "கட்டண விவரம்:\n\n• NEET: ₹45,000/வருடம்\n• IIT-JEE: ₹50,000/வருடம்\n• UPSC: ₹35,000/வருடம்\n• TNPSC: ₹12,000\n\nEMI: 3 அல்லது 6 மாதம் — வட்டி இல்லை.\nSecond child: 10% discount.\nScholarship available.", chips: ["Scholarship விவரம்","Demo book பண்ணு","Team-கிட்ட பேசு"], intent: 2 },
+  "Scholarship விவரம்": { msg: "Scholarship:\n\n• 90%+ marks: 20% தள்ளுபடி\n• Financial need: 30% வரை\n• Sibling: 10% off\n• Early registration: 15% off\n\nDemo visit-ல் counsellor assess பண்றார்.", chips: ["Demo book பண்ணு","Team-கிட்ட பேசு"], intent: 2 },
+  "பிள்ளையின் progress": { msg: "Parent Updates:\n\n• Weekly SMS progress report\n• Monthly parent-teacher meeting\n• தேர்வு scores instant notification\n• Attendance SMS உங்களுக்கு நேரடியாக\n• Subject teachers WhatsApp access\n\nஉங்கள் பிள்ளை பின்தங்கினால் நாங்கள் முதலில் சொல்கிறோம்.", chips: ["Demo book பண்ணு","Team-கிட்ட பேசு"] },
+  "Batch நேரங்கள்": { msg: "கிடைக்கும் Batches:\n\n• காலை: 7 AM – 10 AM\n• மதியம்: 12 PM – 3 PM\n• மாலை: 5 PM – 8 PM\n• Weekend: சனி & ஞாயிறு 9–1\n\nOnline batch எல்லா நேரத்திலும்.", chips: ["Demo book பண்ணு","கட்டணம் & payment"] },
+  "Parent counselling": { msg: "Free Parent Counselling:\n\n• சரியான course selection\n• Realistic targets\n• Weak students எப்படி handle பண்றோம்\n• Fee & scholarship planning\n• உங்கள் கேள்விகளுக்கு பதில் — time limit இல்லை\n\nFree. No pressure. 45 minutes.", chips: ["Counselling book","Team-கிட்ட பேசு"], intent: 2 },
+  "Counselling book": { msg: "Sessions: திங்கள்–சனி, 10 AM–6 PM\n\nCall/WhatsApp: 98765 43210\n\nபெயர் & number சொல்லுங்க — நாங்கள் call பண்றோம்.", chips: ["Team-கிட்ட பேசு","Start over"], intent: 1, conversion: true },
+  "Safety": { msg: "உங்கள் பிள்ளையின் safety:\n\n• எல்லா classrooms-லும் CCTV\n• Biometric attendance — parents-க்கு SMS\n• Female counsellor available\n• Anti-ragging policy strict\n• Parents separate waiting area", chips: ["Demo book பண்ணு","Parent counselling"] },
+  "Demo book பண்ணு": { msg: "Free Demo Class:\n\n• திங்கள் & வியாழன்\n• காலை 10 மணி / மாலை 4 மணி\n• நேரில் அல்லது Online\n\nபிள்ளையின் பெயர், class, target exam சொல்லுங்க.\n\nCall/WhatsApp: 98765 43210", chips: ["Team-கிட்ட பேசு","கட்டணம் & payment"], intent: 3 },
+  "Team-கிட்ட பேசு": { msg: "எங்கள் team:\nதிங்கள்–சனி: காலை 9 – மாலை 7\n\nPhone/WhatsApp: 98765 43210\n\n2 மணி நேரத்தில் callback வேணுமா?", chips: ["ஆமா, callback வேணும்","Start over"], intent: 1 },
+  "ஆமா, callback வேணும்": { msg: "பெயர் மற்றும் number சொல்லுங்க.\n\n2 working hours-ல் call வருகிறது.\n\nவிஜய் அகாடமியை நம்பியதற்கு நன்றி.", chips: ["Start over"], intent: 1, conversion: true },
+  "Start over": null
+}
+}
+};
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function getFlow() { return F[lang][mode]; }
+
+function addMsg(text, type) {
+  var d = document.createElement('div');
+  d.className = 'msg ' + (type === 'bot' ? 'bot-msg' : 'user-msg');
+  d.textContent = text;
+  chatEl.appendChild(d);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+function addChips(chips) {
+  var w = document.createElement('div');
+  w.className = 'chips-wrap';
+  chips.forEach(function(c) {
+    var b = document.createElement('button');
+    b.className = 'chip';
+    b.textContent = c;
+    b.onclick = function() { handleChip(c); };
+    w.appendChild(b);
+  });
+  chatEl.appendChild(w);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+function disableChips() {
+  chatEl.querySelectorAll('.chip').forEach(function(b) { b.disabled = true; });
+}
+
+function addHotAlert() {
+  var a = document.createElement('div');
+  a.className = 'hot-alert';
+  a.innerHTML = '<div class="hot-alert-title"><span class="hot-dot"></span>Hot lead detected — owner alert</div>This visitor has shown high purchase intent. Recommend a follow-up call within 30 minutes for best conversion.';
+  chatEl.appendChild(a);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  hotLeads++;
+  updateStats();
+}
+
+function showTyping() {
+  var w = document.createElement('div');
+  w.className = 'typing-wrap'; w.id = 'typing';
+  w.innerHTML = '<div class="typing"><span class="t-dot"></span><span class="t-dot"></span><span class="t-dot"></span></div>';
+  chatEl.appendChild(w);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+function removeTyping() { var t = document.getElementById('typing'); if (t) t.remove(); }
+
+function updateStats() {
+  document.getElementById('s-inquiries').textContent = totalInquiries;
+  document.getElementById('s-hot').textContent = hotLeads;
+  var r = totalInquiries > 0 ? Math.round((conversions / totalInquiries) * 100) : 0;
+  document.getElementById('s-conv').textContent = r + '%';
+}
+
+function speak(text) {
+  if (!speakOn || !synth) return;
+  synth.cancel();
+  var u = new SpeechSynthesisUtterance(text);
+  u.lang = lang === 'ta' ? 'ta-IN' : 'en-IN';
+  u.rate = 0.9; u.pitch = 1;
+  synth.speak(u);
+}
+
+// ─── INTERACTION ─────────────────────────────────────────────────────────────
+function handleChip(chip) {
+  var restartKeys = ['Start over'];
+  if (restartKeys.indexOf(chip) > -1) { restart(); return; }
+  disableChips();
+  addMsg(chip, 'user');
+  totalInquiries++;
+  showTyping();
+  var next = getFlow()[chip];
+  setTimeout(function() {
+    removeTyping();
+    if (next) {
+      if (next.intent) {
+        intentScore += next.intent;
+        if (next.conversion) { conversions++; }
+        if (!hotFired && intentScore >= 5) { hotFired = true; addHotAlert(); }
+      }
+      speak(next.msg);
+      addMsg(next.msg, 'bot');
+      if (next.chips && next.chips.length) addChips(next.chips);
+    } else {
+      var s = getFlow().start;
+      speak(s.msg); addMsg(s.msg, 'bot'); addChips(s.chips);
+    }
+    updateStats();
+  }, 700);
+}
+
+function sendText() {
+  var v = document.getElementById('inp').value.trim();
+  if (!v) return;
+  document.getElementById('inp').value = '';
+  disableChips();
+  addMsg(v, 'user');
+  totalInquiries++;
+  showTyping();
+  setTimeout(function() {
+    removeTyping();
+    var flow = getFlow();
+    var match = null;
+    var vl = v.toLowerCase();
+    Object.keys(flow).forEach(function(k) {
+      if (k !== 'start' && (k.toLowerCase().indexOf(vl) > -1 || vl.indexOf(k.toLowerCase()) > -1)) match = k;
+    });
+    var resp = match ? flow[match] : null;
+    if (resp) {
+      if (resp.intent) intentScore += resp.intent;
+      if (resp.conversion) conversions++;
+      if (!hotFired && intentScore >= 5) { hotFired = true; addHotAlert(); }
+      speak(resp.msg); addMsg(resp.msg, 'bot');
+      if (resp.chips) addChips(resp.chips);
+    } else {
+      var fb = lang === 'en'
+        ? "I didn't catch that. Please choose from the options below or call 98765 43210."
+        : "புரியவில்லை. கீழே உள்ள options தேர்ந்தெடுங்க அல்லது 98765 43210 call பண்ணுங்க.";
+      speak(fb); addMsg(fb, 'bot'); addChips(getFlow().start.chips);
+    }
+    updateStats();
+  }, 700);
+}
+
+// ─── VOICE ───────────────────────────────────────────────────────────────────
+function toggleSpeak() {
+  speakOn = !speakOn;
+  if (!speakOn && synth) synth.cancel();
+  var btn = document.getElementById('spk-btn');
+  btn.classList.toggle('muted', !speakOn);
+  document.getElementById('voice-bar').textContent = speakOn ? '' : 'Voice output off';
+  setTimeout(function() { document.getElementById('voice-bar').textContent = ''; }, 2000);
+}
+
+function toggleVoice() {
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    document.getElementById('voice-bar').textContent = 'Voice input not supported — use Chrome';
+    setTimeout(function() { document.getElementById('voice-bar').textContent = ''; }, 3000);
+    return;
+  }
+  if (recOn) { recognition.stop(); return; }
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = lang === 'ta' ? 'ta-IN' : 'en-IN';
+  recognition.interimResults = false;
+  recognition.onstart = function() {
+    recOn = true;
+    document.getElementById('mic-btn').classList.add('recording');
+    document.getElementById('voice-bar').textContent = 'Listening...';
+  };
+  recognition.onresult = function(e) {
+    var t = e.results[0][0].transcript;
+    document.getElementById('inp').value = t;
+    document.getElementById('voice-bar').textContent = '';
+    sendText();
+  };
+  recognition.onerror = function() {
+    document.getElementById('voice-bar').textContent = 'Could not hear clearly — try again';
+    setTimeout(function() { document.getElementById('voice-bar').textContent = ''; }, 2500);
+  };
+  recognition.onend = function() {
+    recOn = false;
+    document.getElementById('mic-btn').classList.remove('recording');
+    setTimeout(function() { document.getElementById('voice-bar').textContent = ''; }, 1500);
+  };
+  recognition.start();
+}
+
+// ─── CONTROLS ────────────────────────────────────────────────────────────────
+function setLang(l) {
+  lang = l;
+  document.getElementById('btn-en').classList.toggle('active', l === 'en');
+  document.getElementById('btn-ta').classList.toggle('active', l === 'ta');
+  restart();
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-student').classList.toggle('active', m === 'student');
+  document.getElementById('btn-parent').classList.toggle('active', m === 'parent');
+  document.getElementById('mode-badge').textContent = m === 'parent' ? 'Parent' : 'Student';
+  document.getElementById('status-txt').textContent = m === 'parent' ? 'Parent support mode' : 'Online · replies instantly';
+  restart();
+}
+
+function restart() {
+  chatEl.innerHTML = '';
+  intentScore = 0; totalInquiries = 0; hotLeads = 0; conversions = 0; hotFired = false;
+  updateStats();
+  if (synth) synth.cancel();
+  var s = getFlow().start;
+  speak(s.msg); addMsg(s.msg, 'bot'); addChips(s.chips);
+}
+
+restart();
+</script>
+</body>
+</html>
